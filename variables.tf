@@ -1,8 +1,5 @@
 variable "region" {}
 
-variable "ACCESS_KEY" {}
-variable "SECRET_KEY" {}
-
 variable "prefix" {}
 variable "org" {}
 variable "app" {}
