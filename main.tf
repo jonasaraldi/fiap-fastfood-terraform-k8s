@@ -13,7 +13,7 @@ terraform {
 }
 
 provider "aws" {
-  region     = var.region
+  region = var.region
 }
 
 module "vpc" {
@@ -26,7 +26,7 @@ module "vpc" {
 
 module "eks" {
   source            = "./modules/eks"
-  cluster_name      = var.cluster_name 
+  cluster_name      = var.cluster_name
   prefix            = var.prefix
   org               = var.org
   app               = var.app
