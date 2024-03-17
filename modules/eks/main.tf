@@ -5,13 +5,14 @@ resource "aws_security_group" "cluster-sg" {
     aws_iam_role_policy_attachment.cluster-AmazonEKSVPCResourceController,
     aws_iam_role_policy_attachment.cluster-AmazonEKSClusterPolicy
   ]
+
   egress {
-    from_port       = 0
-    to_port         = 0
-    protocol        = "-1"
-    cidr_blocks     = ["0.0.0.0/0"]
-    prefix_list_ids = []
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
+  
   tags = {
     Name      = "${var.prefix}-sg"
     org       = var.org
@@ -19,6 +20,14 @@ resource "aws_security_group" "cluster-sg" {
     env       = var.env
     terraform = true
   }
+}
+
+resource "aws_vpc_security_group_ingress_rule" "cluster-sg-ingress-rule" {
+  security_group_id = aws_security_group.cluster-sg.id
+  cidr_ipv4         = var.vpc_cidr_block
+  from_port         = 0
+  ip_protocol       = "TCP"
+  to_port           = 0
 }
 
 resource "aws_iam_role" "cluster-role" {

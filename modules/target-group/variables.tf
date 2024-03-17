@@ -2,4 +2,5 @@ variable "prefix" {}
 variable "org" {}
 variable "app" {}
 variable "env" {}
-variable "subnet_count" {}
+variable "vpc_id" {}
+variable "target_ip_address" {}

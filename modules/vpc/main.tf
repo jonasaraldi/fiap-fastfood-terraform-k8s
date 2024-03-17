@@ -11,14 +11,28 @@ resource "aws_vpc" "vpc" {
 
 data "aws_availability_zones" "available" {}
 
-resource "aws_subnet" "vpc-subnets" {
-  count                   = 2
+resource "aws_subnet" "vpc-public-subnets" {
+  count                   = var.subnet_count
   availability_zone       = data.aws_availability_zones.available.names[count.index]
   vpc_id                  = aws_vpc.vpc.id
   cidr_block              = "10.0.${count.index}.0/24"
   map_public_ip_on_launch = true
   tags = {
-    Name      = "${var.prefix}-subnet-${count.index}"
+    Name      = "${var.prefix}-public-subnet-${count.index}"
+    org       = var.org
+    app       = var.app
+    env       = var.env
+    terraform = true
+  }
+}
+
+resource "aws_subnet" "vpc-private-subnets" {
+  count                   = var.subnet_count
+  availability_zone       = data.aws_availability_zones.available.names[count.index]
+  vpc_id                  = aws_vpc.vpc.id
+  cidr_block              = "10.0.${count.index + var.subnet_count}.0/24"
+  tags = {
+    Name      = "${var.prefix}-private-subnet-${count.index}"
     org       = var.org
     app       = var.app
     env       = var.env
@@ -55,5 +69,5 @@ resource "aws_route_table" "rtb" {
 resource "aws_route_table_association" "rtb-assoc" {
   count          = 2
   route_table_id = aws_route_table.rtb.id
-  subnet_id      = aws_subnet.vpc-subnets.*.id[count.index]
+  subnet_id      = aws_subnet.vpc-public-subnets.*.id[count.index]
 }
