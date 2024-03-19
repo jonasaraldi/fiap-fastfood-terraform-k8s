@@ -52,34 +52,32 @@ module "rds" {
   app      = var.app
   env      = var.env
   vpc_id   = module.vpc.vpc_id
-  subnets  = module.vpc.public_subnets
+  subnets  = module.vpc.private_subnets
   username = "postgres"
   password = "postgres"
 }
 
-# resource "aws_cognito_user_pool" "user-pool" {
-#   name = "fastfood-user-pool"
-
-#   password_policy {
-#     minimum_length    = 6
-#     require_lowercase = true
-#     require_numbers   = true
-#     require_symbols   = true
-#     require_uppercase = true
-#   }
+# module "cognito" {
+#   source = "./modules/cognito"
+#   org    = var.org
+#   app    = var.app
+#   env    = var.env
 # }
 
-# resource "aws_cognito_user_pool_client" "user-pool-client" {
-#   name                   = "fastfood-user-pool-client"
-#   user_pool_id           = aws_cognito_user_pool.user-pool.id
-#   generate_secret        = true
-#   allowed_oauth_flows    = ["code"]
-#   allowed_oauth_scopes   = ["email", "openid", "profile"]
-#   callback_urls          = ["http://example.com/callback"]
-#   default_redirect_uri   = "http://example.com"
-#   logout_urls            = ["http://example.com/logout"]
-#   supported_identity_providers = ["COGNITO"]
-# }
+module "eks" {
+  source         = "./modules/eks"
+  org            = var.org
+  app            = var.app
+  env            = var.env
+  vpc_id         = module.vpc.vpc_id
+  vpc_cidr_block = module.vpc.vpc_cidr_block
+  subnet_ids     = module.vpc.private_subnets
+  instance_type  = var.instance_type
+  desired_size   = var.desired_size
+  min_size       = var.min_size
+  max_size       = var.max_size
+}
+
 
 # module "eks" {
 #   source            = "./modules/eks"

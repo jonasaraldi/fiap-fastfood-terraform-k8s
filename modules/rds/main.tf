@@ -11,7 +11,7 @@ resource "aws_db_subnet_group" "this" {
 }
 
 resource "aws_security_group" "this" {
-  name   = "${var.app}-${var.env}"
+  name   = "${var.app}-${var.env}-rds"
   vpc_id = var.vpc_id
 
   ingress {
@@ -37,7 +37,7 @@ resource "aws_security_group" "this" {
 }
 
 resource "aws_db_parameter_group" "this" {
-  name   = "rms-prod-paramgroup"
+  name   = "${var.app}-${var.env}-pg"
   family = "postgres16"
 
   parameter {

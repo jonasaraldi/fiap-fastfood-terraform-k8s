@@ -1,5 +1,5 @@
 resource "aws_iam_role" "cluster-role" {
-  name               = "${var.app}-cluster-role"
+  name               = "${var.app}-${var.env}-cluster-role"
   assume_role_policy = <<POLICY
 {
     "Version": "2012-10-17",
@@ -32,15 +32,9 @@ resource "aws_iam_role_policy_attachment" "cluster-AmazonEKSClusterPolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
 }
 
-resource "aws_cloudwatch_log_group" "cluster-log" {
-  name              = "/aws/eks/${var.prefix}-${var.app}/cluster"
-  retention_in_days = var.retention_in_days
-}
-
 resource "aws_security_group" "cluster-sg" {
   vpc_id = var.vpc_id
   depends_on = [
-    aws_cloudwatch_log_group.cluster-log,
     aws_iam_role_policy_attachment.cluster-AmazonEKSVPCResourceController,
     aws_iam_role_policy_attachment.cluster-AmazonEKSClusterPolicy
   ]
@@ -53,7 +47,7 @@ resource "aws_security_group" "cluster-sg" {
   }
 
   tags = {
-    Name      = "${var.prefix}-sg"
+    Name      = "${var.app}-${var.env}-cluster-sg"
     org       = var.org
     app       = var.app
     env       = var.env
@@ -65,23 +59,25 @@ resource "aws_vpc_security_group_ingress_rule" "cluster-sg-ingress-rule" {
   security_group_id = aws_security_group.cluster-sg.id
   cidr_ipv4         = var.vpc_cidr_block
   from_port         = 0
-  ip_protocol       = "TCP"
+  ip_protocol       = "-1"
   to_port           = 0
 }
 
 resource "aws_eks_cluster" "cluster-eks" {
-  name                      = var.cluster_name
+  name                      = "${var.app}-${var.env}"
   role_arn                  = aws_iam_role.cluster-role.arn
   enabled_cluster_log_types = ["api", "audit"]
+
   vpc_config {
     subnet_ids         = var.subnet_ids
     security_group_ids = [aws_security_group.cluster-sg.id]
   }
+
   depends_on = [
-    aws_cloudwatch_log_group.cluster-log,
     aws_iam_role_policy_attachment.cluster-AmazonEKSVPCResourceController,
     aws_iam_role_policy_attachment.cluster-AmazonEKSClusterPolicy
   ]
+
   tags = {
     org       = var.org
     app       = var.app
@@ -91,7 +87,7 @@ resource "aws_eks_cluster" "cluster-eks" {
 }
 
 resource "aws_iam_role" "node-role" {
-  name               = "${var.app}-role-node"
+  name               = "${var.app}-${var.env}-role-node"
   assume_role_policy = <<POLICY
 {
   "Version": "2012-10-17",
@@ -131,7 +127,7 @@ resource "aws_iam_role_policy_attachment" "node-AmazonEC2ContainerRegistryReadOn
 
 resource "aws_eks_node_group" "cluster-node" {
   cluster_name    = aws_eks_cluster.cluster-eks.name
-  node_group_name = "${var.app}-nodes"
+  node_group_name = "${var.app}-${var.env}-nodes"
   node_role_arn   = aws_iam_role.node-role.arn
   subnet_ids      = var.subnet_ids
   instance_types  = [var.instance_type]
@@ -142,11 +138,13 @@ resource "aws_eks_node_group" "cluster-node" {
     max_size     = var.max_size
     min_size     = var.min_size
   }
+
   depends_on = [
     aws_iam_role_policy_attachment.node-AmazonEKSWorkerNodePolicy,
     aws_iam_role_policy_attachment.node-AmazonEC2ContainerRegistryReadOnly,
     aws_iam_role_policy_attachment.node-AmazonEKS_CNI_Policy
   ]
+
   tags = {
     org       = var.org
     app       = var.app
