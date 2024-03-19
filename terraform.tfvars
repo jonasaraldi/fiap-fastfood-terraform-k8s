@@ -3,6 +3,7 @@ region = "us-east-1"
 prefix = "app"
 org    = "fiap"
 app    = "fastfood"
+env    = "production"
 
 retention_in_days = 7
 

@@ -32,7 +32,7 @@ resource "aws_lb" "load-balancer" {
   load_balancer_type         = "application"
   security_groups            = [aws_security_group.lb-sg.id]
   subnets                    = [for subnet in var.subnet_ids : subnet]
-  enable_deletion_protection = true
+  enable_deletion_protection = false
 
   tags = {
     org       = var.org

@@ -1,37 +1,5 @@
-resource "aws_security_group" "cluster-sg" {
-  vpc_id = var.vpc_id
-  depends_on = [
-    aws_cloudwatch_log_group.cluster-log,
-    aws_iam_role_policy_attachment.cluster-AmazonEKSVPCResourceController,
-    aws_iam_role_policy_attachment.cluster-AmazonEKSClusterPolicy
-  ]
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  
-  tags = {
-    Name      = "${var.prefix}-sg"
-    org       = var.org
-    app       = var.app
-    env       = var.env
-    terraform = true
-  }
-}
-
-resource "aws_vpc_security_group_ingress_rule" "cluster-sg-ingress-rule" {
-  security_group_id = aws_security_group.cluster-sg.id
-  cidr_ipv4         = var.vpc_cidr_block
-  from_port         = 0
-  ip_protocol       = "TCP"
-  to_port           = 0
-}
-
 resource "aws_iam_role" "cluster-role" {
-  name               = var.app
+  name               = "${var.app}-cluster-role"
   assume_role_policy = <<POLICY
 {
     "Version": "2012-10-17",
@@ -67,6 +35,38 @@ resource "aws_iam_role_policy_attachment" "cluster-AmazonEKSClusterPolicy" {
 resource "aws_cloudwatch_log_group" "cluster-log" {
   name              = "/aws/eks/${var.prefix}-${var.app}/cluster"
   retention_in_days = var.retention_in_days
+}
+
+resource "aws_security_group" "cluster-sg" {
+  vpc_id = var.vpc_id
+  depends_on = [
+    aws_cloudwatch_log_group.cluster-log,
+    aws_iam_role_policy_attachment.cluster-AmazonEKSVPCResourceController,
+    aws_iam_role_policy_attachment.cluster-AmazonEKSClusterPolicy
+  ]
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name      = "${var.prefix}-sg"
+    org       = var.org
+    app       = var.app
+    env       = var.env
+    terraform = true
+  }
+}
+
+resource "aws_vpc_security_group_ingress_rule" "cluster-sg-ingress-rule" {
+  security_group_id = aws_security_group.cluster-sg.id
+  cidr_ipv4         = var.vpc_cidr_block
+  from_port         = 0
+  ip_protocol       = "TCP"
+  to_port           = 0
 }
 
 resource "aws_eks_cluster" "cluster-eks" {
@@ -135,6 +135,7 @@ resource "aws_eks_node_group" "cluster-node" {
   node_role_arn   = aws_iam_role.node-role.arn
   subnet_ids      = var.subnet_ids
   instance_types  = [var.instance_type]
+  capacity_type   = "ON_DEMAND"
 
   scaling_config {
     desired_size = var.desired_size
